@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Messy CSV Generator</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #1a1a2e;
+            background-image: 
+                radial-gradient(circle at 20% 80%, rgba(238, 130, 238, 0.3), transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(255, 165, 0, 0.3), transparent 50%),
+                radial-gradient(circle at 40% 40%, rgba(255, 69, 0, 0.2), transparent 50%);
+            min-height: 100vh;
+            padding: 20px;
+            color: white;
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.02);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            padding: 40px;
+            box-shadow: 
+                0 32px 64px rgba(0, 0, 0, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        }
+        
+        h1 {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24, #ff9ff3, #54a0ff);
+            background-size: 300% 300%;
+            animation: gradientShift 4s ease infinite;
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-size: 3em;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 16px;
+        }
+        
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: rgba(255, 255, 255, 0.7);
+            margin-bottom: 40px;
+            font-size: 1.2em;
+        }
+        
+        .options-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 24px;
+            margin-bottom: 40px;
+        }
+        
+        .option-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 24px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .option-card:hover {
+            transform: translateY(-4px);
+            border-color: rgba(255, 100, 100, 0.4);
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.2);
+        }
+        
+        .option-card.selected {
+            border-color: rgba(255, 100, 100, 0.6);
+            background: rgba(255, 100, 100, 0.05);
+        }
+        
+        .option-title {
+            font-size: 1.3em;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: #ff6b6b;
+        }
+        
+        .option-desc {
+            color: rgba(255, 255, 255, 0.7);
+            line-height: 1.5;
+            margin-bottom: 16px;
+        }
+        
+        .option-examples {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 12px;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 0.9em;
+            color: rgba(255, 255, 255, 0.5);
+        }
+        
+        .controls {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: rgba(255, 255, 255, 0.9);
+        }
+        
+        input, select {
+            width: 100%;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 8px;
+            color: white;
+            font-family: inherit;
+        }
+        
+        .btn {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+            border: none;
+            border-radius: 12px;
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 24px rgba(255, 107, 107, 0.3);
+        }
+        
+        .preview {
+            margin-top: 24px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 12px;
+            padding: 20px;
+            max-height: 300px;
+            overflow: auto;
+        }
+        
+        .preview pre {
+            color: rgba(255, 255, 255, 0.8);
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            line-height: 1.4;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🗂️ Messy CSV Generator</h1>
+        <p class="subtitle">Create intentionally messy CSV files to test your data cleaning tools</p>
+        
+        <div class="options-grid">
+            <div class="option-card selected" data-type="all">
+                <div class="option-title">🔥 ULTIMATE MESSY CSV</div>
+                <div class="option-desc">All data types combined in one chaotic file - the perfect test for your cleaning tool!</div>
+                <div class="option-examples">
+                    Everything messy:<br>
+                    • Company names<br>
+                    • Phone numbers<br>
+                    • Email addresses<br>
+                    • Street addresses<br>
+                    • Cities & states<br>
+                    • Product names
+                </div>
+            </div>
+            
+            <div class="option-card" data-type="companies">
+                <div class="option-title">📊 Company Names Only</div>
+                <div class="option-desc">Inconsistent company names with various formatting issues</div>
+                <div class="option-examples">
+                    microsoft corporation<br>
+                    GOOGLE LLC<br>
+                    apple Inc.<br>
+                    facebook, inc<br>
+                    Amazon.com, Inc.
+                </div>
+            </div>
+            
+            <div class="option-card" data-type="phones">
+                <div class="option-title">📞 Phone Numbers Only</div>
+                <div class="option-desc">Phone numbers in multiple formats with inconsistencies</div>
+                <div class="option-examples">
+                    (555) 123-4567<br>
+                    555.123.4567<br>
+                    5551234567<br>
+                    +1-555-123-4567<br>
+                    555 123 4567
+                </div>
+            </div>
+            
+            <div class="option-card" data-type="emails">
+                <div class="option-title">📧 Email Addresses Only</div>
+                <div class="option-desc">Email addresses with spacing and case issues</div>
+                <div class="option-examples">
+                    john.doe@gmail.com<br>
+                    JANE.SMITH@YAHOO.COM<br>
+                    bob smith@hotmail.com<br>
+                    alice@company .com<br>
+                    mike@OUTLOOK.COM
+                </div>
+            </div>
+            
+            <div class="option-card" data-type="addresses">
+                <div class="option-title">🏠 Addresses Only</div>
+                <div class="option-desc">Street addresses with abbreviation inconsistencies</div>
+                <div class="option-examples">
+                    123 main st<br>
+                    456 Oak Avenue<br>
+                    789 Pine Dr.<br>
+                    321 elm street<br>
+                    654 MAPLE ROAD
+                </div>
+            </div>
+            
+            <div class="option-card" data-type="cities">
+                <div class="option-title">🏙️ Cities & States Only</div>
+                <div class="option-desc">City names with state abbreviation inconsistencies</div>
+                <div class="option-examples">
+                    new york, ny<br>
+                    Los Angeles, California<br>
+                    CHICAGO, IL<br>
+                    miami, florida<br>
+                    Seattle, WA
+                </div>
+            </div>
+            
+            <div class="option-card" data-type="products">
+                <div class="option-title">🛍️ Product Names Only</div>
+                <div class="option-desc">Product names with brand inconsistencies</div>
+                <div class="option-examples">
+                    iphone 15 pro<br>
+                    Samsung Galaxy S24<br>
+                    MACBOOK PRO<br>
+                    dell xps 13<br>
+                    HP Pavilion
+                </div>
+            </div>
+        </div>
+        
+        <div class="controls">
+            <div class="form-group">
+                <label for="rowCount">Number of Rows:</label>
+                <input type="number" id="rowCount" value="50" min="10" max="1000">
+            </div>
+            
+            <button class="btn" onclick="generateCSV()">Generate Messy CSV</button>
+        </div>
+        
+        <div class="preview" id="preview" style="display: none;">
+            <h3 style="color: #ff6b6b; margin-bottom: 16px;">Preview:</h3>
+            <pre id="previewContent"></pre>
+            <button class="btn" style="margin-top: 16px;" onclick="downloadCSV()">Download CSV File</button>
+        </div>
+    </div>
+
+    <script>
+        let selectedType = null;
+        let generatedData = '';
+        
+        // Data templates for different types
+        const dataTemplates = {
+            all: {
+                header: 'id,company_name,contact_person,phone_number,email_address,street_address,city_state,product_interest,budget,industry,notes',
+                generator: (i) => {
+                    const companies = [
+                        'microsoft corporation', 'GOOGLE LLC', 'apple Inc.', 'facebook, inc', 'Amazon.com, Inc.',
+                        'tesla, inc', 'NETFLIX INC', 'uber technologies inc', 'airbnb, Inc.', 'spotify technology s.a.',
+                        'adobe inc.', 'SALESFORCE, INC', 'zoom video communications', 'slack technologies',
+                        'dropbox Inc', 'twitter, inc', 'snapchat Inc.', 'pinterest, inc', 'square, Inc.',
+                        'paypal holdings, inc', 'ebay Inc.', 'etsy, inc', 'shopify inc.', 'wix.com Ltd',
+                        // More realistic messy entries
+                        'Micro$oft Corp', 'Google   LLC', 'APPLE INC!!!', 'Meta (Facebook)', 'amazon.com',
+                        'Tesla Motors Inc.', 'Netflix, Inc', 'UBER TECH', 'AirBnB Inc', 'Spotify AB',
+                        'Adobe Systems', 'salesforce.com inc', 'Zoom Communications Inc', 'Slack Tech Inc',
+                        'DropBox, Inc.', '@Twitter Inc', 'SnapChat Inc.', 'Pinterest, Inc.', 'Square Inc',
+                        'PayPal Inc', 'eBay, Inc.', 'Etsy Inc', 'Shopify, Inc', 'Wix.com'
+                    ];
+                    
+                    const names = [
+                        'John Doe', 'jane smith', 'BOB JOHNSON', 'alice brown', 'Mike Wilson',
+                        'sarah davis', 'DAVID GARCIA', 'lisa rodriguez', 'chris taylor', 'AMANDA WHITE',
+                        'kevin lee', 'maria gonzalez', 'ROBERT CLARK', 'jennifer hall', 'daniel kim',
+                        // More realistic messy entries
+                        'John  Doe', 'JANE SMITH', 'Bob Johnson Jr.', 'Alice Brown-Smith', 'mike wilson',
+                        'Sarah M. Davis', 'david garcia', 'Lisa Rodriguez-Chen', 'Chris T Taylor', 'amanda white',
+                        'Kevin Lee III', 'Maria Gonzalez', 'robert clark', 'Jennifer Hall, PhD', 'Daniel Kim, CPA',
+                        'john doe', 'Jane SMITH', 'Bob JOHNSON', 'Alice  Brown', 'MIKE WILSON'
+                    ];
+                    
+                    const phoneFormats = [
+                        () => `(555) ${Math.floor(Math.random() * 900 + 100)}-${Math.floor(Math.random() * 9000 + 1000)}`,
+                        () => `555.${Math.floor(Math.random() * 900 + 100)}.${Math.floor(Math.random() * 9000 + 1000)}`,
+                        () => `555${Math.floor(Math.random() * 900 + 100)}${Math.floor(Math.random() * 9000 + 1000)}`,
+                        () => `+1-555-${Math.floor(Math.random() * 900 + 100)}-${Math.floor(Math.random() * 9000 + 1000)}`,
+                        () => `555 ${Math.floor(Math.random() * 900 + 100)} ${Math.floor(Math.random() * 9000 + 1000)}`,
+                        () => `(555)${Math.floor(Math.random() * 900 + 100)}-${Math.floor(Math.random() * 9000 + 1000)}`,
+                        () => `555- ${Math.floor(Math.random() * 900 + 100)} -${Math.floor(Math.random() * 9000 + 1000)}`,
+                        // More realistic messy entries
+                        () => `555.${Math.floor(Math.random() * 900 + 100)}.${Math.floor(Math.random() * 9000 + 1000)} ext 123`,
+                        () => `(555) ${Math.floor(Math.random() * 900 + 100)}-${Math.floor(Math.random() * 9000 + 1000)} x456`,
+                        () => `555-${Math.floor(Math.random() * 900 + 100)}-${Math.floor(Math.random() * 9000 + 1000)} (mobile)`,
+                        () => `Tel: 555-${Math.floor(Math.random() * 900 + 100)}-${Math.floor(Math.random() * 9000 + 1000)}`,
+                        () => `Phone: (555) ${Math.floor(Math.random() * 900 + 100)}-${Math.floor(Math.random() * 9000 + 1000)}`,
+                        () => `555 ${Math.floor(Math.random() * 900 + 100)}  ${Math.floor(Math.random() * 9000 + 1000)}`,
+                        () => `555/${Math.floor(Math.random() * 900 + 100)}/${Math.floor(Math.random() * 9000 + 1000)}`,
+                        () => `555-${Math.floor(Math.random() * 900 + 100)}.${Math.floor(Math.random() * 9000 + 1000)}`
+                    ];
+                    
+                    const emailDomains = ['gmail.com', 'YAHOO.COM', 'hotmail.com', 'outlook.com', 'company.com', 'BUSINESS.ORG'];
+                    const emailFormats = [
+                        (name, domain) => `${name.toLowerCase().replace(' ', '.')}@${domain}`,
+                        (name, domain) => `${name.toUpperCase().replace(' ', '.')}@${domain}`,
+                        (name, domain) => `${name.replace(' ', ' ')}@${domain}`,
+                        (name, domain) => `${name.toLowerCase().replace(' ', '')}@company .com`,
+                        (name, domain) => `${name.replace(' ', '_')}@${domain}`,
+                        (name, domain) => `${name.toLowerCase().replace(' ', '-')}@${domain}`,
+                        // More realistic messy entries
+                        (name, domain) => `${name.toLowerCase().replace(' ', '.')}@ ${domain}`,
+                        (name, domain) => `${name.replace(' ', '')}@${domain.toLowerCase()}`,
+                        (name, domain) => `Email: ${name.toLowerCase().replace(' ', '.')}@${domain}`,
+                        (name, domain) => `${name.toLowerCase().replace(' ', '.')}@${domain} (work)`,
+                        (name, domain) => `${name.toLowerCase().replace(' ', '.')}@${domain}.co`,
+                        (name, domain) => `${name.toLowerCase().replace(' ', '.')} @${domain}`,
+                        (name, domain) => `${name.toLowerCase().replace(' ', '.')}@${domain}.`,
+                        (name, domain) => `${name.toLowerCase().replace(' ', '..')}@${domain}`,
+                        (name, domain) => `${name.toLowerCase().replace(' ', '.')}@@${domain}`
+                    ];
+                    
+                    const streets = [
+                        'main st', 'Oak Avenue', 'Pine Dr.', 'elm street', 'MAPLE ROAD', 
+                        'first street', 'Second Ave', 'third blvd', 'FOURTH ST', 'Fifth Avenue',
+                        'broadway', 'PARK AVE', 'wall st.', 'Madison Ave', 'LEXINGTON BLVD',
+                        // More realistic messy entries
+                        'Main Street', 'oak ave.', 'Pine Drive', 'ELM ST', 'Maple Rd.',
+                        '1st Street', 'second avenue', 'Third Boulevard', 'fourth street', '5TH AVE',
+                        'Broadway St.', 'Park Avenue', 'Wall Street', 'MADISON AVENUE', 'Lexington Blvd.',
+                        'Main St.', 'OAK AVENUE', 'pine dr', 'Elm Street', 'MAPLE ROAD.',
+                        'First St', 'SECOND AVE.', 'third street', 'Fourth Ave', 'fifth avenue'
+                    ];
+                    
+                    const cityStates = [
+                        'new york, ny', 'Los Angeles, California', 'CHICAGO, IL', 'miami, florida', 'Seattle, WA',
+                        'boston, ma', 'Austin, Texas', 'DENVER, CO', 'atlanta, georgia', 'San Francisco, CA',
+                        'philadelphia, PA', 'PHOENIX, AZ', 'dallas, tx', 'San Diego, California', 'LAS VEGAS, NV',
+                        // More realistic messy entries
+                        'New York, NY', 'los angeles, ca', 'Chicago, Illinois', 'MIAMI, FL', 'seattle, washington',
+                        'Boston, Massachusetts', 'austin, tx', 'Denver, Colorado', 'ATLANTA, GA', 'san francisco, calif',
+                        'Philadelphia, Penn', 'phoenix, arizona', 'Dallas, TX', 'SAN DIEGO, CA', 'las vegas, nevada',
+                        'NYC, NY', 'LA, CA', 'Chi-town, IL', 'Miami Beach, FL', 'Seattle, Wash',
+                        'Beantown, MA', 'ATX, TX', 'Mile High City, CO', 'ATL, GA', 'SF, CA'
+                    ];
+                    
+                    const products = [
+                        'iphone 15 pro', 'Samsung Galaxy S24', 'MACBOOK PRO', 'dell xps 13', 'HP Pavilion',
+                        'surface pro', 'IPAD AIR', 'airpods pro', 'galaxy buds', 'PIXEL 8',
+                        'microsoft office', 'ADOBE CREATIVE SUITE', 'salesforce crm', 'zoom licenses', 'slack premium'
+                    ];
+                    
+                    const budgets = [
+                        '$1,000', '5000', '$10,000.00', 'twenty thousand', '$50K', '100000', 'TBD', 'CONFIDENTIAL',
+                        // More realistic messy entries
+                        '$1000', '5,000', '$ 10,000', 'Twenty Thousand Dollars', '50k', '$100,000.00', 'tbd', 'confidential',
+                        '1K', '$5K', '10000', 'TWENTY THOUSAND', '$50,000', '100K', 'To Be Determined', 'N/A',
+                        '1000 dollars', '$5,000.00', '10k', 'twenty thousand USD', '$50000', '100,000', 'TBD', 'PRIVATE'
+                    ];
+                    const industries = [
+                        'Technology', 'software', 'E-COMMERCE', 'social media', 'Cloud Services', 'fintech', 'HEALTHCARE',
+                        // More realistic messy entries
+                        'Tech', 'Software Development', 'ecommerce', 'Social Media', 'cloud services', 'FinTech', 'healthcare',
+                        'technology', 'SOFTWARE', 'E-Commerce', 'social networking', 'Cloud Computing', 'Financial Technology', 'Health Care'
+                    ];
+                    const notes = [
+                        'interested in demo', 'URGENT - call ASAP', 'follow up next week', 'needs approval from mgmt',
+                        'competitor analysis needed', 'HOT LEAD!!!', 'cold outreach', 'referral from partner',
+                        // More realistic messy entries
+                        'Interested in Demo', 'urgent - CALL ASAP!!!', 'Follow up next week.', 'Needs approval from management',
+                        'competitor analysis req.', 'HOT LEAD - PRIORITY!!!', 'Cold Outreach', 'Referral from Partner',
+                        'very interested!!!', 'CALL IMMEDIATELY', 'follow-up needed', 'mgmt approval required',
+                        'hot prospect', 'WARM LEAD', 'needs more info', 'ready to buy'
+                    ];
+                    
+                    const company = companies[Math.floor(Math.random() * companies.length)];
+                    const person = names[Math.floor(Math.random() * names.length)];
+                    const phone = phoneFormats[Math.floor(Math.random() * phoneFormats.length)]();
+                    const domain = emailDomains[Math.floor(Math.random() * emailDomains.length)];
+                    const email = emailFormats[Math.floor(Math.random() * emailFormats.length)](person, domain);
+                    const streetNum = Math.floor(Math.random() * 9000 + 100);
+                    const street = streets[Math.floor(Math.random() * streets.length)];
+                    const cityState = cityStates[Math.floor(Math.random() * cityStates.length)];
+                    const product = products[Math.floor(Math.random() * products.length)];
+                    const budget = budgets[Math.floor(Math.random() * budgets.length)];
+                    const industry = industries[Math.floor(Math.random() * industries.length)];
+                    const note = notes[Math.floor(Math.random() * notes.length)];
+                    
+                    return `${i},"${company}","${person}","${phone}","${email}","${streetNum} ${street}","${cityState}","${product}","${budget}","${industry}","${note}"`;
+                }
+            },
+            companies: {
+                header: 'id,company_name,industry,employees',
+                generator: (i) => {
+                    const companies = [
+                        'microsoft corporation', 'GOOGLE LLC', 'apple Inc.', 'facebook, inc', 'Amazon.com, Inc.',
+                        'tesla, inc', 'NETFLIX INC', 'uber technologies inc', 'airbnb, Inc.', 'spotify technology s.a.',
+                        'adobe inc.', 'SALESFORCE, INC', 'zoom video communications', 'slack technologies',
+                        'dropbox Inc', 'twitter, inc', 'snapchat Inc.', 'pinterest, inc', 'square, Inc.',
+                        'paypal holdings, inc', 'ebay Inc.', 'etsy, inc', 'shopify inc.', 'wix.com Ltd'
+                    ];
+                    const industries = ['Technology', 'software', 'E-COMMERCE', 'social media', 'Cloud Services'];
+                    const employees = [100, 500, 1000, 5000, 10000, 50000, 100000];
+                    
+                    return `${i},${companies[Math.floor(Math.random() * companies.length)]},${industries[Math.floor(Math.random() * industries.length)]},${employees[Math.floor(Math.random() * employees.length)]}`;
+                }
+            },
+            phones: {
+                header: 'id,customer_name,phone_number,country',
+                generator: (i) => {
+                    const names = ['John Doe', 'jane smith', 'BOB JOHNSON', 'alice brown', 'Mike Wilson'];
+                    const phoneFormats = [
+                        () => `(555) ${Math.floor(Math.random() * 900 + 100)}-${Math.floor(Math.random() * 9000 + 1000)}`,
+                        () => `555.${Math.floor(Math.random() * 900 + 100)}.${Math.floor(Math.random() * 9000 + 1000)}`,
+                        () => `555${Math.floor(Math.random() * 900 + 100)}${Math.floor(Math.random() * 9000 + 1000)}`,
+                        () => `+1-555-${Math.floor(Math.random() * 900 + 100)}-${Math.floor(Math.random() * 9000 + 1000)}`,
+                        () => `555 ${Math.floor(Math.random() * 900 + 100)} ${Math.floor(Math.random() * 9000 + 1000)}`
+                    ];
+                    
+                    return `${i},${names[Math.floor(Math.random() * names.length)]},${phoneFormats[Math.floor(Math.random() * phoneFormats.length)]()},USA`;
+                }
+            },
+            emails: {
+                header: 'id,customer_name,email_address,department',
+                generator: (i) => {
+                    const names = ['John Doe', 'jane smith', 'BOB JOHNSON', 'alice brown', 'Mike Wilson'];
+                    const emailFormats = [
+                        (name) => `${name.toLowerCase().replace(' ', '.')}@gmail.com`,
+                        (name) => `${name.toUpperCase().replace(' ', '.')}@YAHOO.COM`,
+                        (name) => `${name.replace(' ', ' ')}@hotmail.com`,
+                        (name) => `${name.toLowerCase().replace(' ', '')}@company .com`,
+                        (name) => `${name.replace(' ', '_')}@OUTLOOK.COM`
+                    ];
+                    const departments = ['Sales', 'marketing', 'ENGINEERING', 'hr', 'Finance'];
+                    const name = names[Math.floor(Math.random() * names.length)];
+                    
+                    return `${i},${name},${emailFormats[Math.floor(Math.random() * emailFormats.length)](name)},${departments[Math.floor(Math.random() * departments.length)]}`;
+                }
+            },
+            addresses: {
+                header: 'id,customer_name,street_address,city',
+                generator: (i) => {
+                    const names = ['John Doe', 'jane smith', 'BOB JOHNSON', 'alice brown', 'Mike Wilson'];
+                    const streets = ['main st', 'Oak Avenue', 'Pine Dr.', 'elm street', 'MAPLE ROAD', 'first street', 'Second Ave', 'third blvd'];
+                    const cities = ['New York', 'los angeles', 'CHICAGO', 'miami', 'Seattle'];
+                    const num = Math.floor(Math.random() * 9000 + 100);
+                    
+                    return `${i},${names[Math.floor(Math.random() * names.length)]},${num} ${streets[Math.floor(Math.random() * streets.length)]},${cities[Math.floor(Math.random() * cities.length)]}`;
+                }
+            },
+            cities: {
+                header: 'id,customer_name,city_state,region',
+                generator: (i) => {
+                    const names = ['John Doe', 'jane smith', 'BOB JOHNSON', 'alice brown', 'Mike Wilson'];
+                    const cityStates = [
+                        'new york, ny', 'Los Angeles, California', 'CHICAGO, IL', 'miami, florida', 'Seattle, WA',
+                        'boston, ma', 'Austin, Texas', 'DENVER, CO', 'atlanta, georgia', 'San Francisco, CA'
+                    ];
+                    const regions = ['East Coast', 'west coast', 'MIDWEST', 'south', 'Pacific Northwest'];
+                    
+                    return `${i},${names[Math.floor(Math.random() * names.length)]},${cityStates[Math.floor(Math.random() * cityStates.length)]},${regions[Math.floor(Math.random() * regions.length)]}`;
+                }
+            },
+            products: {
+                header: 'id,product_name,brand,price',
+                generator: (i) => {
+                    const products = [
+                        'iphone 15 pro', 'Samsung Galaxy S24', 'MACBOOK PRO', 'dell xps 13', 'HP Pavilion',
+                        'surface pro', 'IPAD AIR', 'airpods pro', 'galaxy buds', 'PIXEL 8',
+                        'nintendo switch', 'PLAYSTATION 5', 'xbox series x', 'apple watch', 'fitbit versa'
+                    ];
+                    const brands = ['Apple', 'samsung', 'DELL', 'hp', 'Microsoft', 'GOOGLE', 'nintendo'];
+                    const prices = [99, 199, 299, 499, 699, 899, 1199, 1499, 1999];
+                    
+                    return `${i},${products[Math.floor(Math.random() * products.length)]},${brands[Math.floor(Math.random() * brands.length)]},$${prices[Math.floor(Math.random() * prices.length)]}`;
+                }
+            }
+        };
+        
+        // Handle option selection
+        document.querySelectorAll('.option-card').forEach(card => {
+            card.addEventListener('click', () => {
+                document.querySelectorAll('.option-card').forEach(c => c.classList.remove('selected'));
+                card.classList.add('selected');
+                selectedType = card.dataset.type;
+            });
+        });
+        
+        // Set default selection
+        selectedType = 'all';
+        
+        function generateCSV() {
+            if (!selectedType) {
+                alert('Please select a data type first!');
+                return;
+            }
+            
+            const rowCount = parseInt(document.getElementById('rowCount').value);
+            const template = dataTemplates[selectedType];
+            
+            let csv = template.header + '\n';
+            for (let i = 1; i <= rowCount; i++) {
+                csv += template.generator(i) + '\n';
+            }
+            
+            generatedData = csv;
+            
+            // Show preview
+            document.getElementById('preview').style.display = 'block';
+            document.getElementById('previewContent').textContent = csv.split('\n').slice(0, 11).join('\n') + (rowCount > 10 ? '\n... and more rows' : '');
+        }
+        
+        function downloadCSV() {
+            if (!generatedData) return;
+            
+            const blob = new Blob([generatedData], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+            a.download = selectedType === 'all' ? `ultimate_messy_data.csv` : `messy_${selectedType}_data.csv`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+        }
+    </script>
+</body>
+</html>
