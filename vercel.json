@@ -4,23 +4,5 @@
     "api/*.js": {
       "maxDuration": 30
     }
-  },
-  "routes": [
-    {
-      "src": "/",
-      "dest": "/api/index.js"
-    },
-    {
-      "src": "/app.js",
-      "dest": "/api/app.js"
-    },
-    {
-      "src": "/api/clean-csv",
-      "dest": "/api/clean-csv.js"
-    },
-    {
-      "src": "/api/health",
-      "dest": "/api/health.js"
-    }
-  ]
+  }
 }
