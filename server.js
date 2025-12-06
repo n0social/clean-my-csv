@@ -33,11 +33,13 @@ app.use(express.json());
 app.use(express.static('public'));
 
 // Configure multer for file uploads
-const upload = multer({ dest: 'uploads/' });
+// Use /tmp directory for serverless environments like Vercel
+const uploadDir = process.env.NODE_ENV === 'production' ? '/tmp' : 'uploads/';
+const upload = multer({ dest: uploadDir });
 
 // Ensure uploads directory exists
-if (!fs.existsSync('uploads')) {
-  fs.mkdirSync('uploads');
+if (uploadDir !== '/tmp' && !fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir);
 }
 
 // Helper function to filter inappropriate characters based on column type
@@ -835,7 +837,7 @@ app.post('/api/clean-csv', upload.single('csvFile'), async (req, res) => {
     }
 
     const inputPath = req.file.path;
-    const outputPath = path.join('uploads', `cleaned_${Date.now()}_${req.file.originalname}`);
+    const outputPath = path.join(uploadDir, `cleaned_${Date.now()}_${req.file.originalname}`);
     
     console.log(`📂 Input file: ${inputPath}`);
     console.log(`📂 Output file: ${outputPath}`);
@@ -876,9 +878,15 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', message: 'Clean My CSV API is running' });
 });
 
-app.listen(PORT, () => {
-  console.log(`🚀 Clean My CSV server running on http://localhost:${PORT}`);
-  console.log(`📁 Upload directory: ${path.resolve('uploads')}`);
-  console.log(`🔑 OpenAI API key: ${process.env.OPENAI_API_KEY ? '✅ Set' : '❌ Not set'}`);
-  console.log('Ready to clean some CSVs! 🧹');
-});
+// For local development
+if (process.env.NODE_ENV !== 'production') {
+  app.listen(PORT, () => {
+    console.log(`🚀 Clean My CSV server running on http://localhost:${PORT}`);
+    console.log(`📁 Upload directory: ${path.resolve('uploads')}`);
+    console.log(`🔑 OpenAI API key: ${process.env.OPENAI_API_KEY ? '✅ Set' : '❌ Not set'}`);
+    console.log('Ready to clean some CSVs! 🧹');
+  });
+}
+
+// Export for Vercel serverless functions
+module.exports = app;
