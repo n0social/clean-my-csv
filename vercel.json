@@ -1,8 +1,25 @@
 {
   "version": 2,
   "functions": {
+    "*.js": {
+      "maxDuration": 30
+    },
     "api/*.js": {
       "maxDuration": 30
     }
-  }
+  },
+  "routes": [
+    {
+      "src": "/",
+      "dest": "/index.js"
+    },
+    {
+      "src": "/app.js",
+      "dest": "/app-serve.js"
+    },
+    {
+      "src": "/api/(.*)",
+      "dest": "/api/$1"
+    }
+  ]
 }
