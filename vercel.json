@@ -1,9 +1,6 @@
 {
   "version": 2,
   "functions": {
-    "*.js": {
-      "maxDuration": 30
-    },
     "api/*.js": {
       "maxDuration": 30
     }
@@ -11,15 +8,27 @@
   "routes": [
     {
       "src": "/",
-      "dest": "/index.js"
+      "dest": "/api/index"
     },
     {
       "src": "/app.js",
-      "dest": "/app-serve.js"
+      "dest": "/api/app"
     },
     {
-      "src": "/api/(.*)",
-      "dest": "/api/$1"
+      "src": "/api/clean-csv",
+      "dest": "/api/clean-csv"
+    },
+    {
+      "src": "/api/health",
+      "dest": "/api/health"
+    },
+    {
+      "src": "/api/hello",
+      "dest": "/api/hello"
+    },
+    {
+      "src": "/api/test",
+      "dest": "/api/test"
     }
   ]
 }

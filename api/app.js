@@ -3,7 +3,7 @@ const path = require('path');
 
 module.exports = (req, res) => {
   try {
-    const jsPath = path.join(__dirname, 'app.js');
+    const jsPath = path.join(__dirname, '..', 'app.js');
     const js = fs.readFileSync(jsPath, 'utf8');
     
     res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
